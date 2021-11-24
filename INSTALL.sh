@@ -1,6 +1,9 @@
 #!/bin/sh
 
+cd || exit
 sudo apt install -y vim-gtk3 zsh fzf tmux git
+
+git clone https://github.com/barslmn/dotfiles.git .
 
 # get the latest relase of nnn
  wget -q -O- https://api.github.com/repos/jarun/nnn/releases/latest \
@@ -20,6 +23,5 @@ curl -fLo ~/.vim/autoload/plug.vim --create-dirs \
 vim +PluginInstall +qall
 
 # tmux
-cd || exit
 git clone https://github.com/gpakosz/.tmux.git
 ln -s -f .tmux/.tmux.conf .
