@@ -4,11 +4,12 @@ Plug 'mg979/vim-visual-multi'
 Plug 'mbbill/undotree'
 Plug 'tpope/vim-surround'
 Plug 'tpope/vim-commentary'
-" FORMATING
-Plug 'vim-syntastic/syntastic'
-Plug 'psf/black'
 Plug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
+" FORMATING
+Plug 'godlygeek/tabular'
+Plug 'vim-syntastic/syntastic'
+Plug 'psf/black'
 " COSMATICS
 Plug 'vim-airline/vim-airline'
 Plug 'vim-airline/vim-airline-themes'
