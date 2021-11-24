@@ -9,7 +9,8 @@ git clone https://github.com/barslmn/dotfiles.git .
  wget -q -O- https://api.github.com/repos/jarun/nnn/releases/latest \
 	| awk '/browser_download_url/ && /nnn-nerd-static/ {gsub(/\"/, ""); print $2}' \
 	| wget -q -i- -O- \
-	| tar xzf - -O | sudo tee /usr/local/bin/nnn
+	| tar xzf - -O | sudo tee /usr/local/bin/nnn > /dev/null \
+        && sudo chmod +x /usr/local/bin/nnn
 
 # zsh
 sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
