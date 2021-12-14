@@ -5,7 +5,7 @@ sudo apt install -y vim-gtk3 zsh fzf tmux git
 
 git init
 git remote add origin https://github.com/barslmn/dotfiles.git
-git pull origin master
+git pull origin main
 
 # get the latest relase of nnn
  wget -q -O- https://api.github.com/repos/jarun/nnn/releases/latest \
