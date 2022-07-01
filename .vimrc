@@ -7,7 +7,6 @@ Plug 'tpope/vim-commentary'
 Plug 'tpope/vim-dispatch'
 Plug 'SirVer/ultisnips'
 Plug 'honza/vim-snippets'
-Plug 'github/copilot.vim'
 Plug 'mcchrish/nnn.vim'
 " FORMATING
 Plug 'godlygeek/tabular'
