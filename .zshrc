@@ -84,7 +84,6 @@ plugins=(
   zsh-syntax-highlighting
   colored-man-pages
   samtools
-  bcftools
 )
 source $ZSH/oh-my-zsh.sh
 
@@ -123,16 +122,10 @@ bindkey "^x" autosuggest-execute
 
 [ -f ~/.fzf.zsh ] && source $HOME/.fzf.zsh
 
-export GUI="1"
-export PAGER="less"
-export NNN_BMS="~:~;m:/mnt;w:/mnt/c/Users/Dell/Documents/Workbench"
+export NNN_BMS="~:~;m:/media;w:/mnt/c/Users/Dell/Documents/Workbench"
 export NNN_OPTS="acDEx"
-export NNN_OPENER="~/.config/nnn/plugins/nuke"
+export NNN_OPENER="$HOME/.config/nnn/plugins/nuke"
 export NNN_ARCHIVE="\\.(7z|a|ace|alz|arc|arj|bz|bz2|cab|cpio|deb|gz|jar|lha|lz|lzh|lzma|lzo|rar|rpm|rz|t7z|tar|tbz|tbz2|tgz|tlz|txz|tZ|tzo|war|xpi|xz|Z|zip)$"
 export NNN_COLORS="4563"
 export NNN_TRASH=1
-export NNN_PLUG="l:launch;y:x2sel;p:preview-tui;o:organize"
-
-
-# WSL
-# export DISPLAY=$(cat /etc/resolv.conf | grep nameserver | awk '{print $2}'):0
+export NNN_PLUG="l:launch;y:x2sel;p:preview-tabbed;o:organize"

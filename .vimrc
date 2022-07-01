@@ -59,6 +59,13 @@ let g:UltiSnipsJumpBackwardTrigger="<s-tab>"
 let mapleader = ","
 filetype plugin indent on
 syntax on
+hi Normal ctermbg=None
+
+" Colorscheme
+let g:gruvbox_italic=1
+let g:gruvbox_transparent_bg=1
+let g:gruvbox_contrast_dark='hard'
+let g:gruvbox_italicize_strings=1
 colorscheme gruvbox
 hi Normal ctermbg=None
 
