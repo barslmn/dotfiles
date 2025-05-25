@@ -1,0 +1,214 @@
+#vimiumHintMarkerContainer div.internalVimiumHintMarker,
+#vimiumHintMarkerContainer div.vimiumHintMarker {
+  padding: 3px 5px;
+  background: rgba(214, 93, 14, 0.85);
+  border: 1px solid #665c54;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+#vimiumHintMarkerContainer div span {
+  color: #3c3836 !important;
+  text-shadow: none;
+  font-weight: bold;
+}
+
+#vimiumHintMarkerContainer div > .matchingCharacter {
+  opacity: 1.0;
+}
+
+#vimiumHintMarkerContainer div > .matchingCharacter ~ span {
+  color: #665c54 !important;
+  opacity: 0.8;
+}
+
+#vomnibar {
+  background: rgba(60, 56, 54, 0.85);
+  border: 2px solid #b16286;
+  animation: show 200ms cubic-bezier(0, 0, 0.2, 1) forwards;
+  max-height: calc(100vh - 70px);
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+@keyframes show {
+  0% {
+    transform: translateY(50px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+#vomnibar input {
+  color: #fbf1c7;
+  background: transparent;
+  border: none;
+  height: unset;
+  padding: 16px 30px;
+  font-size: 1.1em;
+}
+
+#vomnibar .vomnibarSearchArea {
+  border: none;
+  padding: unset;
+  background: transparent;
+}
+
+#vomnibar ul {
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  border-top: 1px solid #665c54;
+}
+
+#vomnibar li {
+  padding: 12px 15px;
+  border-bottom: 1px solid #665c54;
+  transition: background-color 0.1s ease-out;
+}
+
+#vomnibar li .vomnibarTopHalf,
+#vomnibar li .vomnibarBottomHalf {
+  padding: 3px 0;
+}
+
+#vomnibar li .vomnibarSource {
+  color: #d65d0e;
+  font-style: italic;
+}
+
+#vomnibar li em,
+#vomnibar li .vomnibarTitle {
+  color: #458588;
+  font-weight: bold;
+}
+
+#vomnibar li .vomnibarUrl {
+  color: #689d6a;
+  opacity: 0.85;
+}
+
+#vomnibar li .vomnibarMatch {
+  color: #98971a;
+  font-weight: bold;
+  text-decoration: underline;
+}
+
+#vomnibar li .vomnibarTitle .vomnibarMatch {
+  color: #458588;
+  text-decoration: underline;
+}
+
+#vomnibar li.vomnibarSelected {
+  background-color: #665c54;
+}
+
+div.vimiumHUD {
+  background: rgba(60, 56, 54, 0.85);
+  border: 1px solid #665c54;
+  border-radius: 4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  padding: 10px 15px;
+  font-size: 0.95em;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+div.vimiumHUD span#hud-find-input,
+div.vimiumHUD .vimiumHUDSearchAreaInner {
+  color: #fbf1c7;
+}
+
+div.vimiumHUD .hud-find {
+  background-color: transparent;
+  border: none;
+}
+
+div.vimiumHUD .vimiumHUDSearchArea {
+  background-color: transparent;
+}
+
+body.vimiumBody, .vimiumBody {
+  background-color: #3c3836 !important;
+  color: #fbf1c7 !important;
+}
+
+.vimiumBody #footerWrapper, 
+.vimiumBody #userDefinedLinkHintCss, 
+.vimiumBody #scrollStepSize, 
+.vimiumBody #linkHintNumbers, 
+.vimiumBody #newTabUrl, 
+.vimiumBody #nextPatterns, 
+.vimiumBody #previousPatterns, 
+.vimiumBody #searchUrl, 
+.vimiumBody #linkHintCharacters, 
+.vimiumBody #searchEngines, 
+.vimiumBody #keyMappings,
+.vimiumBody #uploadBackup,
+.vimiumBody .clickable,
+.vimiumBody .section {
+  color: #fbf1c7 !important;
+  background-color: #665c54;
+  padding: 15px;
+  border-radius: 4px;
+  margin-bottom: 15px;
+}
+
+.vimiumBody #footer, 
+.vimiumBody .remove, 
+.vimiumBody input[type="text"], 
+.vimiumBody input[type="number"], 
+.vimiumBody input[name="pattern"], 
+.vimiumBody input[name="passKeys"], 
+.vimiumBody textarea,
+.vimiumBody select,
+#uploadBackup {
+  background-color: #3c3836 !important;
+  color: #fbf1c7 !important;
+  border: 1px solid #665c54 !important;
+  padding: 8px 10px;
+  border-radius: 3px;
+}
+.vimiumBody input[type="checkbox"] {
+    margin-right: 5px;
+}
+
+body.vimiumBody input, body.vimiumBody textarea, body.vimiumBody select {
+  border: 1px solid #3c3836;
+  background-color: #3c3836;
+  color: #fbf1c7;
+  padding: 8px;
+  border-radius: 3px;
+}
+
+body.vimiumBody a {
+  color: #b16286;
+  text-decoration: none;
+}
+body.vimiumBody a:hover {
+  color: #689d6a;
+  text-decoration: underline;
+}
+
+body.vimiumBody .exclusionHeaderText, 
+body.vimiumBody .example, 
+body.vimiumBody .caption, 
+body.vimiumBody header, 
+body.vimiumBody label {
+  color: #fbf1c7 !important;
+}
+
+body.vimiumBody h1, body.vimiumBody h2, body.vimiumBody h3 {
+    color: #458588;
+    border-bottom: 1px solid #665c54;
+    padding-bottom: 5px;
+    margin-top: 20px;
+}
