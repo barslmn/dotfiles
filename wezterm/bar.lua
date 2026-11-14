@@ -12,6 +12,8 @@
 local wezterm = require("wezterm")
 local ui = require("ui")
 local util = require("util")
+local names = require("names")
+local nav = require("nav")
 local M = {}
 
 -- Statistics are for the Linux machine running the GUI, also in SSH mux tabs.
@@ -23,7 +25,8 @@ local BATTERY_INTERVAL = 10
 -- ends (‹3 … 12›), and the strip moves only when the active tab would leave
 -- it. Inactive tabs show their last folder and running command (cut at
 -- tab_max_width); the active tab its full title, as long as the free space
--- allows. Long names lose their start, not their end.
+-- allows. Long names lose their start, not their end. Pinned tabs end in
+-- their pin number (see nav.lua).
 --
 -- The fancy tab bar draws in window_frame.font while the terminal uses
 -- config.font, so widths are converted with this ratio: bar font character
@@ -202,14 +205,6 @@ local function tab_bar_colors(palette)
 	return tab_bar
 end
 
-local function domain_label(domain, local_domain)
-	if domain == "local" then
-		return local_domain
-	end
-	-- Keep the configured domain alias; OSC 7 may still name an earlier host.
-	return (domain:gsub("^SSHMUX:", ""):gsub("^SSH:", ""))
-end
-
 -- ---------------------------------------------------------------- tab strip
 
 -- Columns a piece of bar text takes. Nerd Font icons draw wider than a
@@ -235,98 +230,6 @@ local function cells_width(cells)
 		end
 	end
 	return width
-end
-
-local function basename(path)
-	path = path:gsub("/+$", "")
-	if path == "" or path == "~" or path == wezterm.home_dir or path == "/root" or path:match("^/home/[^/]+$") then
-		return "~"
-	end
-	return path:match("([^/]+)$") or path
-end
-
-local function is_path(text)
-	local first = text and text:sub(1, 1)
-	return first == "/" or first == "~"
-end
-
-local SHELLS = { fish = true, bash = true, zsh = true, sh = true }
--- Skipped to find the real command: "sudo htop" shows htop.
-local WRAPPERS = { sudo = true, doas = true, time = true, exec = true, command = true, env = true }
-
--- The command a title says is running: "~/dir: nvim file" (fish title with
--- the command line) or a bare "nvim" (fish_title = status current-command).
--- nil at an idle prompt.
-local function command_of(title, before, after)
-	local line
-	if is_path(before) then
-		line = after
-	elseif title ~= "" and not is_path(title) and not title:find("[:/ ]") then
-		line = title
-	end
-	local cmd
-	for word in (line or ""):gmatch("%S+") do
-		cmd = word:match("([^/]+)$")
-		if not WRAPPERS[cmd] then
-			break
-		end
-	end
-	if not cmd or SHELLS[cmd] or WRAPPERS[cmd] then
-		return nil
-	end
-	return cmd
-end
-
--- An inactive tab's name: its last folder, from the directory the shell
--- reports (fish always does) or else a path in its title, plus the running
--- command: "myproject: nvim". nil when neither is known.
-local function short_name(pane)
-	local title = pane:get_title() or ""
-	local before, after = title:match("^(.-): (.*)$")
-
-	local folder
-	local path = util.cwd_path(pane)
-	if path and path ~= "" then
-		folder = basename(path)
-	elseif is_path(before) then
-		folder = basename(before)
-	elseif is_path(after) then
-		folder = basename(after)
-	elseif is_path(title) then
-		folder = basename(title)
-	end
-
-	local cmd = command_of(title, before, after)
-	if cmd == folder then
-		cmd = nil
-	end
-	if folder and cmd then
-		return folder .. ": " .. cmd
-	end
-	return folder or cmd
-end
-
-local function tab_name(tab, active)
-	local name = tab:get_title()
-	if name ~= "" then
-		return name
-	end
-	local pane = tab:active_pane()
-	if not pane then
-		return "shell"
-	end
-	if not active then
-		local short = short_name(pane)
-		if short then
-			return short
-		end
-	end
-	local process = (pane:get_foreground_process_name() or ""):match("([^/\\]+)$") or ""
-	if process ~= "" then
-		return process
-	end
-	local title = pane:get_title() or ""
-	return title ~= "" and title or "shell"
 end
 
 local function is_zoomed(tab)
@@ -402,9 +305,13 @@ local function tab_strip(mux_window, budget, max_width, tab_bar, foreground, dim
 	end
 	local labels, widths, active = {}, {}, 1
 	for i, info in ipairs(tabs) do
-		local name = tab_name(info.tab, info.is_active)
+		local name = names.tab(info.tab, info.is_active)
 		if is_zoomed(info.tab) then
 			name = name .. " " .. wezterm.nerdfonts.md_fullscreen
+		end
+		local pin = nav.pin_of(info.tab:tab_id())
+		if pin then
+			name = name .. " " .. wezterm.nerdfonts.md_pin .. pin
 		end
 		local prefix, suffix = " " .. (info.index + 1) .. " ", "  "
 		local room = max_width
@@ -443,7 +350,7 @@ end
 
 M.apply_to_config = function(config)
 	local read_stats = system_stats_reader()
-	local local_domain = wezterm.hostname()
+	local local_domain = util.LOCAL_DOMAIN
 	local max_width = config.tab_max_width or 16
 
 	-- Everything the bar draws with comes from this palette, which is also
@@ -466,7 +373,7 @@ M.apply_to_config = function(config)
 	config.show_tabs_in_tab_bar = false
 
 	local function background_for(domain)
-		if domain == local_domain or domain == "local" or not brights then
+		if not util.is_remote(domain) or not brights then
 			return colors.background
 		end
 		return mix(colors.background, util.accent(brights, domain), DOMAIN_TINT)
@@ -530,8 +437,9 @@ M.apply_to_config = function(config)
 			cells[#cells + 1] = { Foreground = { Color = color or foreground } }
 			cells[#cells + 1] = { Text = STATUS_GAP .. icon .. ICON_GAP .. text }
 		end
-		if ui.is_flashing(window) then
-			metric(wezterm.nerdfonts.md_clipboard_check, "Copied!", foreground)
+		local flash_icon, flash_text = ui.flash_message(window)
+		if flash_icon then
+			metric(flash_icon, flash_text, foreground)
 		end
 		local stats = read_stats()
 		for i, battery in ipairs(stats.batteries) do
@@ -551,7 +459,7 @@ M.apply_to_config = function(config)
 			metric(wezterm.nerdfonts.md_memory, string.format("%.0f%%", stats.memory), ansi[4])
 		end
 		metric(wezterm.nerdfonts.md_clock_outline, wezterm.strftime("%H:%M"), ansi[5])
-		metric(wezterm.nerdfonts.cod_server, domain_label(domain, local_domain), ansi[8])
+		metric(wezterm.nerdfonts.cod_server, util.host(domain), ansi[8])
 		cells[#cells + 1] = { Text = STATUS_END }
 
 		-- Tabs get what's left of the bar after both statuses (plus the half

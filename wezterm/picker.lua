@@ -117,27 +117,4 @@ M.prompt = function(window, pane, opts)
 	opts.action(window, pane, status == "ok" and text or nil)
 end
 
--- Replacement for ShowLauncherArgs({ flags = "FUZZY|TABS" }): the tabs in
--- this window.
-M.tabs = wezterm.action_callback(function(window, pane)
-	local choices = {}
-	for _, t in ipairs(window:mux_window():tabs_with_info()) do
-		local title = t.tab:get_title()
-		if title == "" then
-			title = t.tab:active_pane():get_title()
-		end
-		choices[#choices + 1] = { id = tostring(t.index), label = (t.index + 1) .. "  " .. title }
-	end
-	M.select(window, pane, {
-		title = "Tab",
-		choices = choices,
-		fuzzy = true,
-		action = function(win, p, id)
-			if id then
-				win:perform_action(act.ActivateTab(tonumber(id)), p)
-			end
-		end,
-	})
-end)
-
 return M

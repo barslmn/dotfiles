@@ -4,6 +4,7 @@ local ui = require("ui")
 local util = require("util")
 local picker = require("picker")
 local domains = require("domains")
+local nav = require("nav")
 
 local M = {}
 
@@ -199,7 +200,24 @@ M.keys = {
 			local t = theme(window)
 			local choices = {}
 
-			for _, domain in ipairs(wezterm.mux.all_domains()) do
+			-- SSHMUX (persistent sessions) before plain SSH, then the rest;
+			-- by host within each.
+			local rank = { SSHMUX = 1, SSH = 2 }
+			local list = wezterm.mux.all_domains()
+			table.sort(list, function(a, b)
+				local ta, tb = a:name():match("^([^:]+):"), b:name():match("^([^:]+):")
+				local ra, rb = rank[ta] or 3, rank[tb] or 3
+				if ra ~= rb then
+					return ra < rb
+				end
+				local ha, hb = a:name():gsub("^[^:]+:", ""), b:name():gsub("^[^:]+:", "")
+				if ha ~= hb then
+					return ha < hb
+				end
+				return a:name() < b:name()
+			end)
+
+			for _, domain in ipairs(list) do
 				local name = domain:name()
 				local attached = domain:state() == "Attached"
 
@@ -236,100 +254,14 @@ M.keys = {
 				choices = choices,
 				fuzzy = true,
 				action = function(win, _, id, _)
-					if not id then
-						return
-					end
-
-					local domain = wezterm.mux.get_domain(id)
-					if not domain then
-						return
-					end
-
-					-- Import the remote windows independently of this
-					-- local window, then select their workspace.
-					if domain:state() ~= "Attached" then
-						domain:attach()
-					end
-					domains.switch(win, id)
-				end,
-			})
-		end),
-	},
-	{
-		key = "o",
-		mods = "ALT",
-		action = wezterm.action_callback(function(window, pane)
-			local mux = wezterm.mux
-			local t = theme(window)
-			local current = window:active_workspace()
-
-			-- Collect the domains in use by each workspace, in first-seen order.
-			local domains_by_ws = {}
-
-			for _, mux_win in ipairs(mux.all_windows()) do
-				local ws = mux_win:get_workspace()
-				local seen = domains_by_ws[ws]
-
-				if not seen then
-					seen = { order = {}, set = {} }
-					domains_by_ws[ws] = seen
-				end
-
-				for _, tab in ipairs(mux_win:tabs()) do
-					for _, p in ipairs(tab:panes()) do
-						local dom = p:get_domain_name()
-
-						if dom and not seen.set[dom] then
-							seen.set[dom] = true
-							table.insert(seen.order, dom)
-						end
-					end
-				end
-			end
-
-			local choices = {}
-
-			for _, ws in ipairs(mux.get_workspace_names()) do
-				local info = domains_by_ws[ws]
-				local dom = "unknown"
-
-				if info and #info.order > 0 then
-					dom = table.concat(info.order, "+")
-				end
-
-				local label = wezterm.format({
-					{ Foreground = { Color = color_for_domain(t, dom) } },
-					{ Text = dom },
-					{ Foreground = { Color = t.dim } },
-					{ Text = ":" },
-					{ Attribute = { Intensity = ws == current and "Bold" or "Normal" } },
-					{ Foreground = { Color = t.fg } },
-					{ Text = ws },
-				})
-
-				if ws == current then
-					label = label
-						.. wezterm.format({
-							{ Foreground = { Color = t.brights[4] } },
-							{ Text = " *" },
-						})
-				end
-
-				table.insert(choices, { id = ws, label = label })
-			end
-
-			picker.select(window, pane, {
-				title = "Switch workspace",
-				choices = choices,
-				fuzzy = true,
-				action = function(win, p, id, _)
 					if id then
-						win:perform_action(act.SwitchToWorkspace({ name = id }), p)
+						domains.attach(win, id)
 					end
 				end,
 			})
 		end),
 	},
+	{ key = "o", mods = "ALT", action = nav.workspaces },
 	{
 		key = "o",
 		mods = "ALT|SHIFT",
@@ -365,37 +297,30 @@ M.keys = {
 	{ key = "k", mods = "ALT", action = act.ActivatePaneDirection("Up") },
 	{ key = "j", mods = "ALT", action = act.ActivatePaneDirection("Down") },
 	{ key = "t", mods = "ALT", action = act.SpawnTab("CurrentPaneDomain") },
-	-- ALT + Tab to switch to the most recently used tab
-	{ key = "Tab", mods = "ALT", action = act.ActivateLastTab },
+	-- ALT + Tab: back to the tab you were in before, on any machine/workspace
+	{ key = "Tab", mods = "ALT", action = nav.previous },
 	{ key = "q", mods = "ALT", action = act.ActivateTabRelative(-1) },
 	{ key = "e", mods = "ALT", action = act.ActivateTabRelative(1) },
 	{ key = "e", mods = "ALT|SHIFT", action = domains.cycle(1) },
 	{ key = "q", mods = "ALT|SHIFT", action = domains.cycle(-1) },
 	{ key = "e", mods = "ALT|CTRL", action = act.SwitchWorkspaceRelative(1) },
 	{ key = "q", mods = "ALT|CTRL", action = act.SwitchWorkspaceRelative(-1) },
-	{ key = "t", mods = "ALT|SHIFT", action = picker.tabs },
+	-- Every tab on every attached machine, most used first
+	{ key = "t", mods = "ALT|SHIFT", action = nav.overview },
+	{ key = "p", mods = "ALT", action = nav.pins },
 	{ key = "d", mods = "ALT", action = act.DetachDomain("CurrentPaneDomain") },
 	{ key = "w", mods = "ALT", action = act.CloseCurrentTab({ confirm = true }) },
 	-- Close the current PANE (if you have splits)
 	{ key = "x", mods = "ALT", action = act.CloseCurrentPane({ confirm = true }) },
 }
 
--- ALT+number: tab n. ALT+SHIFT+number: domain n. ALT+CTRL+number: workspace n
--- (alphabetical, same order as ALT+o). phys: keys match the key position,
--- whatever SHIFT+number types on the layout.
+-- ALT+number: tab n of this window. ALT+SHIFT+number: pin this tab as n
+-- (again to unpin). ALT+CTRL+number: go to pin n. phys: keys match the key
+-- position, whatever SHIFT+number types on the layout.
 for i = 1, 9 do
 	table.insert(M.keys, { key = tostring(i), mods = "ALT", action = act.ActivateTab(i - 1) })
-	table.insert(M.keys, { key = "phys:" .. i, mods = "ALT|SHIFT", action = domains.jump(i) })
-	table.insert(M.keys, {
-		key = "phys:" .. i,
-		mods = "ALT|CTRL",
-		action = wezterm.action_callback(function(window, pane)
-			local name = wezterm.mux.get_workspace_names()[i]
-			if name then
-				window:perform_action(act.SwitchToWorkspace({ name = name }), pane)
-			end
-		end),
-	})
+	table.insert(M.keys, { key = "phys:" .. i, mods = "ALT|SHIFT", action = nav.set_pin(i) })
+	table.insert(M.keys, { key = "phys:" .. i, mods = "ALT|CTRL", action = nav.jump_pin(i) })
 end
 
 -- Releasing the button after a drag or a double/triple click: the selection

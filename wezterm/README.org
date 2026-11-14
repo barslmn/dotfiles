@@ -1,0 +1,107 @@
+#+TITLE: WezTerm config
+
+A WezTerm setup for working across several machines over SSH mux domains:
+a bottom bar with a scrolling tab strip, pickers in Noctalia's launcher,
+and ways to jump between tabs on any machine (an overview, pins, and a
+global "previous tab").
+
+* Install
+
+#+begin_src sh
+ln -s ~/dotfiles/wezterm ~/.config/wezterm
+#+end_src
+
+Needs a recent WezTerm (nightly), IosevkaTerm and GohuFont 11 Nerd Fonts,
+and optionally [[https://noctalia.dev][Noctalia]] for the pickers. Without
+Noctalia they fall back to WezTerm's own selector.
+
+Remote machines come from =~/.ssh/config=: each =Host= becomes an =SSH:host=
+and an =SSHMUX:host= domain. Nothing machine-specific is kept in this repo.
+
+* Features
+
+** Bottom bar (=bar.lua=)
+- Left: the workspace, then the tabs as a strip that scrolls. Tabs that
+  don't fit are counted at the ends (=‹3 … 12›=), and long names lose their
+  start, not their end.
+- Inactive tabs show their last folder and running command
+  (=project: nvim=), and pinned tabs show their pin (=󰐃2=).
+- Right: battery, CPU, memory, clock and the current host, plus short
+  messages such as "Copied!" or "Pinned 2 · nvim".
+- Windows whose active pane is on another machine get a faint background
+  tint in that host's colour.
+- Colours follow =colors/Noctalia.toml=. Noctalia rewrites it for each
+  wallpaper, and the config reloads.
+
+** Moving around (=nav.lua=, =domains.lua=)
+- *Overview*: every tab on every attached machine, most used first, then
+  machines you could attach. Typing a host name narrows the list.
+- *Ranking*: by visits and time spent, weighted by how recent they are
+  (like zoxide). A visit counts after 3 s in a tab, and one visit earns at
+  most 10 min of time.
+- *Pins*: pin up to nine tabs and jump to them from anywhere. A jump
+  attaches the pin's machine if it isn't attached, and the bar says where
+  you landed. Replacing an occupied pin takes a second press.
+- *Previous tab*: back to the last tab you were in, on any machine or
+  workspace.
+- *Host prefix*: another machine's workspaces are renamed =host/name=, so two
+  machines' =default= workspaces stay apart.
+- History and pins are saved in =~/.local/state/wezterm/nav.json=. A tab is
+  remembered by host, workspace and its title (if set) or directory.
+
+** Other
+- Copy on select: releasing the mouse after a selection copies it.
+- =M-y= copies a command's output: pick it from the commands on screen.
+- =M-SPC= picks a link or path on screen and opens it. Relative paths are
+  resolved against the pane's directory.
+
+* Keys
+
+=M= is Alt, =C= is Ctrl, =S= is Shift.
+
+| Key               | Action                                            |
+|-------------------+---------------------------------------------------|
+| =M-S-t=           | Overview: all tabs on all machines                |
+| =M-o=             | Workspaces, most used first                       |
+| =M-S-o=           | New workspace                                     |
+| =C-M-S-o=         | Attach or go to a domain (SSHMUX first, then SSH) |
+| =M-TAB=           | Previous tab, anywhere                            |
+| =M-S-1= … =9=     | Pin this tab (same key again unpins)              |
+| =C-M-1= … =9=     | Go to pin                                         |
+| =M-p=             | List pins                                         |
+| =M-1= … =9=       | Tab n of this window                              |
+| =M-q= / =M-e=     | Previous / next tab                               |
+| =M-S-q= / =M-S-e= | Previous / next domain                            |
+| =C-M-q= / =C-M-e= | Previous / next workspace                         |
+| =M-t=             | New tab (same domain)                             |
+| =M-r=             | Rename tab (empty resets)                         |
+| =M-v= / =M-S-v=   | Split right / down                                |
+| =M-h/j/k/l=       | Move between panes                                |
+| =M-w= / =M-x=     | Close tab / pane                                  |
+| =M-d=             | Detach the current domain                         |
+| =M-b=             | Toggle the bar                                    |
+| =M-y=             | Copy a command's output                           |
+| =M-SPC=           | Open a link or path on screen                     |
+
+* Files
+
+| File              | What it is                                            |
+|-------------------+-------------------------------------------------------|
+| =wezterm.lua=     | Entry point: appearance, domains, system settings     |
+| =keybindings.lua= | Keys and mouse bindings                               |
+| =bar.lua=         | The bottom bar and per-domain background tint         |
+| =nav.lua=         | Usage tracking, pins, overview and workspace pickers  |
+| =domains.lua=     | Domain switching, attaching, host-prefixed workspaces |
+| =names.lua=       | Tab names, shared by the bar and the pickers          |
+| =picker.lua=      | Pickers via Noctalia's dmenu, with WezTerm fallback   |
+| =ui.lua=          | Short messages in the bar                             |
+| =util.lua=        | Small shared helpers                                  |
+
+* Tips
+For tab names without the directory over mux, give fish this title on
+each remote host:
+
+#+begin_src fish
+function fish_title; status current-command; end
+funcsave fish_title
+#+end_src
